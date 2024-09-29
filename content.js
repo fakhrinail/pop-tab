@@ -17,31 +17,34 @@ function showTabOverlay() {
     const overlay = document.createElement("div");
     overlay.id = "tab-switcher-overlay";
     overlay.innerHTML = `
-      <div class="tab-switcher-container">
-        <input type="text" placeholder="Search Tabs" id="search-tabs" />
-        <ul id="tab-list"></ul>
-      </div>
+        <div class="tab-switcher-container">
+            <input type="text" placeholder="Search Tabs" id="search-tabs" />
+            <ul id="tab-list"></ul>
+        </div>
     `;
     document.body.appendChild(overlay);
 
-    // Style the overlay (defined in styles.css)
-    populateTabList();
+    // Send a message to the background script to get the list of tabs
+    chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+        console.log(response);
+        
+        populateTabList(response.tabs);
+    });
 
     // Add keyboard event listeners
     document.addEventListener("keydown", handleKeyPress);
 }
 
-function populateTabList() {
-    chrome.tabs.query({ currentWindow: true }, (tabs) => {
-        const tabList = document.getElementById("tab-list");
-        tabList.innerHTML = "";
-        tabs.forEach((tab, index) => {
-            const tabItem = document.createElement("li");
-            tabItem.textContent = tab.title;
-            tabItem.dataset.tabId = tab.id;
-            if (index === 0) tabItem.classList.add("active"); // Highlight the first tab initially
-            tabList.appendChild(tabItem);
-        });
+function populateTabList(tabs) {
+    const tabList = document.getElementById("tab-list");
+    tabList.innerHTML = "";
+
+    tabs.forEach((tab, index) => {
+        const tabItem = document.createElement("li");
+        tabItem.textContent = tab.title;
+        tabItem.dataset.tabId = tab.id;
+        if (index === 0) tabItem.classList.add("active"); // Highlight the first tab initially
+        tabList.appendChild(tabItem);
     });
 }
 

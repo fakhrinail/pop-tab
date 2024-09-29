@@ -23,7 +23,6 @@ chrome.commands.onCommand.addListener((command) => {
                                         action: "showTabSwitcher",
                                     });
                                     console.log("Success injecting!");
-                                    
                                 })
                                 .catch((err) => {
                                     console.error(
@@ -36,5 +35,16 @@ chrome.commands.onCommand.addListener((command) => {
                 );
             }
         });
+    }
+});
+
+// Listen for messages from the content script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "getTabs") {
+        // Query the tabs and send them back to the content script
+        chrome.tabs.query({ currentWindow: true }, (tabs) => {
+            sendResponse({ tabs: tabs });
+        });
+        return true; // Required to indicate that sendResponse will be async
     }
 });
