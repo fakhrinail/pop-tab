@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Tab Switcher</title>
+        <style>
+            body {
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                font-family: Arial, sans-serif;
+            }
+            ul {
+                list-style: none;
+                padding: 0;
+            }
+            li {
+                padding: 10px;
+                cursor: pointer;
+            }
+            li.active {
+                background-color: rgba(255, 255, 255, 0.2);
+            }
+        </style>
+    </head>
+    <body>
+        <ul id="tab-list">
+            <!-- Tabs will be dynamically inserted here -->
+        </ul>
+
+        <script>
+            let currentIndex = 0;
+
+            // Function to populate the tab list
+            chrome.storage.local.get("tabStack", (data) => {
+                const tabStack = data.tabStack || [];
+                const tabList = document.getElementById("tab-list");
+
+                // Populate the tab list
+                chrome.tabs.query({ currentWindow: true }, (tabs) => {
+                    tabStack.forEach((tabId) => {
+                        let tab = tabs.find((t) => t.id === tabId);
+                        if (tab) {
+                            let listItem = document.createElement("li");
+                            listItem.textContent = tab.title;
+                            listItem.setAttribute("data-tab-id", tab.id);
+                            tabList.appendChild(listItem);
+                        }
+                    });
+                });
+            });
+
+            // Add keydown listener for tab iteration
+            document.addEventListener("keydown", (e) => {
+                const tabListItems = document.querySelectorAll("#tab-list li");
+
+                if (e.key === "Tab") {
+                    e.preventDefault(); // Prevent the browser from focusing on different elements
+                    tabListItems[currentIndex].classList.remove("active");
+                    currentIndex = (currentIndex + 1) % tabListItems.length; // Cycle through the tabs
+                    tabListItems[currentIndex].classList.add("active");
+                } else if (e.key === "Enter") {
+                    // When Enter is pressed, switch to the selected tab
+                    const activeTabId =
+                        tabListItems[currentIndex].getAttribute("data-tab-id");
+                    chrome.tabs.update(parseInt(activeTabId), { active: true });
+                    window.close(); // Close the popup after switching
+                }
+            });
+        </script>
+    </body>
+</html>

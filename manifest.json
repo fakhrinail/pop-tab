@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "Pop Tab",
+    "version": "0.1",
+    "description": "Switch tabs like how cool programmers do!",
+    "permissions": ["tabs", "activeTab", "storage", "scripting"],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "commands": {
+        "open-tab-list": {
+            "suggested_key": {
+                "default": "Ctrl+Tab",
+                "mac": "Alt+Tab"
+            },
+            "description": "Open tab popper"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content.js"],
+            "css": ["styles.css"]
+        }
+    ]
+}
