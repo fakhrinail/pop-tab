@@ -48,3 +48,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // Required to indicate that sendResponse will be async
     }
 });
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "activateTab" && message.tabId) {
+        // Call chrome.tabs.update to activate the selected tab
+        chrome.tabs.update(message.tabId, { active: true });
+    }
+});

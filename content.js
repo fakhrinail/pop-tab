@@ -3,6 +3,13 @@ if (typeof overlayVisible === "undefined") {
     var overlayVisible = false;
 }
 
+// Setup detecting pressed keys
+if (typeof overlayVisible === "undefined") {
+    var pressedKeys = {};
+}
+window.onkeyup = function(e) { pressedKeys[e.key] = false; }
+window.onkeydown = function(e) { pressedKeys[e.key] = true; }
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "showTabSwitcher") {
         if (!overlayVisible) {
@@ -33,6 +40,7 @@ function showTabOverlay() {
 
     // Add keyboard event listeners
     document.addEventListener("keydown", handleKeyPress);
+    document.addEventListener('keyup', handleKeyUp);
 }
 
 function populateTabList(tabs) {
@@ -52,23 +60,51 @@ function handleKeyPress(e) {
     const activeItem = document.querySelector("#tab-list li.active");
     let newItem;
 
-    if (e.key === "Tab") {
+    console.log(pressedKeys["Alt"] );
+
+    if (pressedKeys["Alt"] && e.key == "Tab") {
         e.preventDefault();
-        newItem =
-            activeItem.nextElementSibling ||
-            document.querySelector("#tab-list li:first-child");
+        // Find the next sibling, or go to the first item if at the end
+        console.log("current active", activeItem);
+        console.log("next active", activeItem.nextElementSibling);
+        console.log("prev active", activeItem.previousElementSibling);
+        if (e.shiftKey) {
+            // If Shift+Tab is pressed, go to the previous sibling or the last child
+            newItem = activeItem.previousElementSibling || document.querySelector("#tab-list li:last-child");
+        } else {
+            // Normal Tab: Go to the next sibling or the first child if at the end
+            newItem = activeItem.nextElementSibling || document.querySelector("#tab-list li:first-child");
+        }
     } else if (e.key === "Enter") {
-        const tabId = parseInt(activeItem.dataset.tabId);
-        chrome.tabs.update(tabId, { active: true });
-        hideTabOverlay();
+        // When Enter is pressed, activate the selected tab
+        activateTab(activeItem);
     } else if (e.key === "Escape") {
+        // Close the tab switcher if Escape is pressed
         hideTabOverlay();
     }
 
+    // Update the active class to reflect the newly selected item
     if (newItem) {
         activeItem.classList.remove("active");
         newItem.classList.add("active");
     }
+}
+
+// Handle the keyup event for detecting when the Alt key is released
+function handleKeyUp(e) {
+    // Check if Alt key is released
+    if (e.key === "Alt") {
+        const activeItem = document.querySelector("#tab-list li.active");
+        // When Alt is released, activate the current tab
+        activateTab(activeItem);
+    }
+}
+
+// Function to activate a tab
+function activateTab(activeItem) {
+    const tabId = parseInt(activeItem.dataset.tabId);
+    chrome.runtime.sendMessage({ action: "activateTab", tabId: tabId });
+    hideTabOverlay();
 }
 
 function hideTabOverlay() {
