@@ -17,6 +17,7 @@ window.onkeydown = function (e) {
     console.log(`${e.key} is pressed`);
 };
 
+// Handle showTabSwitcher command from background script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "showTabSwitcher") {
         if (!overlayVisible) {
@@ -27,6 +28,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function showTabOverlay() {
+    console.log("trigger showTabOverlay");
+
     // Create the overlay element
     const overlay = document.createElement("div");
     overlay.id = "tab-switcher-overlay";
@@ -40,14 +43,16 @@ function showTabOverlay() {
 
     // Send a message to the background script to get the list of tabs
     chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
-        console.log(response);
-        
         populateTabList(response.tabs);
     });
 
+    // Reset pressed keys when modal is shown
+    pressedKeys["Tab"] = false;
+
     // Add keyboard event listeners
     document.addEventListener("keydown", handleKeyPress);
-    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
 }
 
 function populateTabList(tabs) {
@@ -67,21 +72,23 @@ function handleKeyPress(e) {
     const activeItem = document.querySelector("#tab-list li.active");
     let newItem;
 
-    console.log(pressedKeys["Alt"] );
+    console.log(`handling key press ${JSON.stringify(pressedKeys)}`);
+    console.log(`pressing ${e.key} || ${e.altKey}`);
 
-    if (pressedKeys["Alt"] && e.key == "Tab") {
+    if (pressedKeys["Alt"] && pressedKeys["ArrowDown"]) {
         e.preventDefault();
         // Find the next sibling, or go to the first item if at the end
-        console.log("current active", activeItem);
-        console.log("next active", activeItem.nextElementSibling);
-        console.log("prev active", activeItem.previousElementSibling);
-        if (e.shiftKey) {
-            // If Shift+Tab is pressed, go to the previous sibling or the last child
-            newItem = activeItem.previousElementSibling || document.querySelector("#tab-list li:last-child");
-        } else {
-            // Normal Tab: Go to the next sibling or the first child if at the end
-            newItem = activeItem.nextElementSibling || document.querySelector("#tab-list li:first-child");
-        }
+        console.log(`current ${activeItem}`);
+        console.log(`next ${activeItem.nextElementSibling}`);
+        console.log(`prev ${activeItem.previousElementSibling}`);
+        newItem =
+            activeItem.previousElementSibling ||
+            document.querySelector("#tab-list li:last-child");
+    } else if (pressedKeys["Alt"] && pressedKeys["ArrowUp"]) {
+        // Normal Tab: Go to the next sibling or the first child if at the end
+        newItem =
+            activeItem.nextElementSibling ||
+            document.querySelector("#tab-list li:first-child");
     } else if (e.key === "Enter") {
         // When Enter is pressed, activate the selected tab
         activateTab(activeItem);
@@ -117,7 +124,9 @@ function handleKeyDown(e) {
 
 // Function to activate a tab
 function activateTab(activeItem) {
+    console.log(activeItem);
     const tabId = parseInt(activeItem.dataset.tabId);
+    
     chrome.runtime.sendMessage({ action: "activateTab", tabId: tabId });
     hideTabOverlay();
 }
