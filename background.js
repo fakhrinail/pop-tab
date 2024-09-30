@@ -50,13 +50,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-// // Function to return the MRU list of tabs
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//     if (message.action === "getMRUTabs") {
-//         sendResponse({ tabs: mruTabs });
-//     }
-// });
-
 // Listen for switching tabs
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "activateTab" && message.tabId) {

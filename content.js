@@ -41,10 +41,7 @@ function showTabOverlay() {
     `;
     document.body.appendChild(overlay);
 
-    // Send a message to the background script to get the list of tabs
-    chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
-        populateTabList(response.tabs);
-    });
+    updateTabs();
 
     // Reset pressed keys when modal is shown
     pressedKeys["Tab"] = false;
@@ -67,18 +64,33 @@ function handleKeyPress(e) {
     const activeItem = document.querySelector("#tab-list li.active");
     let newItem;
 
-    if (pressedKeys["Alt"] && pressedKeys["ArrowDown"]) {
+    if (pressedKeys["Alt"] && pressedKeys["ArrowUp"]) {
         e.preventDefault();
         // Find the next sibling, or go to the first item if at the end
-        console.log(`current ${activeItem}`);
-        console.log(`next ${activeItem.nextElementSibling}`);
-        console.log(`prev ${activeItem.previousElementSibling}`);
-        newItem =
-            activeItem.previousElementSibling;
-    } else if (pressedKeys["Alt"] && pressedKeys["ArrowUp"]) {
+        console.log(`current ${activeItem.innerHTML}`);
+        console.log(
+            `next ${
+                activeItem.nextElementSibling
+                    ? activeItem.nextElementSibling.innerHTML
+                    : null
+            }`
+        );
+        // console.log(`prev ${activeItem.previousElementSibling.innerHTML}`);
+
+        newItem = activeItem.previousElementSibling || document.querySelector("#tab-list li:last-child");
+    } else if (pressedKeys["Alt"] && pressedKeys["ArrowDown"]) {
         // Normal Tab: Go to the next sibling or the first child if at the end
-        newItem =
-            activeItem.nextElementSibling;
+        console.log(`current ${activeItem.innerHTML}`);
+        console.log(
+            `next ${
+                activeItem.nextElementSibling
+                    ? activeItem.nextElementSibling.innerHTML
+                    : null
+            }`
+        );
+        // console.log(`prev ${activeItem.previousElementSibling.innerHTML}`);
+
+        newItem = activeItem.nextElementSibling  || document.querySelector("#tab-list li:first-child");;
     } else if (e.key === "Enter") {
         // When Enter is pressed, activate the selected tab
         activateTab(activeItem);
@@ -114,8 +126,22 @@ function handleKeyDown(e) {
 // Function to activate a tab
 function activateTab(activeItem) {
     const tabId = parseInt(activeItem.dataset.tabId);
-    
-    chrome.runtime.sendMessage({ action: "activateTab", tabId: tabId });
+
+    chrome.runtime.sendMessage(
+        { action: "activateTab", tabId: tabId },
+        (response) => {
+            if (chrome.runtime.lastError) {
+                console.error(
+                    "Error sending message:",
+                    chrome.runtime.lastError.message
+                );
+                // Handle the error (for example, retrying the message)
+            } else {
+                console.log("Tab activated successfully");
+            }
+        }
+    );
+
     hideTabOverlay();
 }
 
@@ -126,4 +152,11 @@ function hideTabOverlay() {
     }
     document.removeEventListener("keydown", handleKeyPress);
     overlayVisible = false;
+}
+
+function updateTabs() {
+    // Send a message to the background script to get the list of tabs
+    chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+        populateTabList(response.tabs);
+    });
 }
