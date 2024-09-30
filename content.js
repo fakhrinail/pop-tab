@@ -4,11 +4,18 @@ if (typeof overlayVisible === "undefined") {
 }
 
 // Setup detecting pressed keys
-if (typeof overlayVisible === "undefined") {
+if (typeof pressedKeys === "undefined") {
     var pressedKeys = {};
 }
-window.onkeyup = function(e) { pressedKeys[e.key] = false; }
-window.onkeydown = function(e) { pressedKeys[e.key] = true; }
+
+window.onkeyup = function (e) {
+    pressedKeys[e.key] = false;
+    console.log(`${e.key} is not pressed`);
+};
+window.onkeydown = function (e) {
+    pressedKeys[e.key] = true;
+    console.log(`${e.key} is pressed`);
+};
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "showTabSwitcher") {
@@ -92,12 +99,20 @@ function handleKeyPress(e) {
 
 // Handle the keyup event for detecting when the Alt key is released
 function handleKeyUp(e) {
+    pressedKeys[e.key] = false;
+    console.log(`${e.key} is not pressed`);
+
     // Check if Alt key is released
     if (e.key === "Alt") {
         const activeItem = document.querySelector("#tab-list li.active");
         // When Alt is released, activate the current tab
         activateTab(activeItem);
     }
+}
+
+// Track the keydown event and mark the key as pressed
+function handleKeyDown(e) {
+    pressedKeys[e.key] = true; // Mark key as pressed
 }
 
 // Function to activate a tab
