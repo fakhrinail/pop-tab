@@ -86,13 +86,13 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 // When a tab is updated (e.g., new tab or updated tab), add it to the MRU list if necessary
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === "complete") {
-        updateMRUList(tabId);
-    }
+// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+//     if (changeInfo.status === "complete") {
+//         updateMRUList(tabId);
+//     }
 
-    console.log(mruTabs);
-});
+//     console.log(mruTabs);
+// });
 
 // When a tab is closed, remove it from the MRU list
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
